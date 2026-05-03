@@ -1,10 +1,20 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
+
+// 🔗 Serve frontend
+app.use(express.static(__dirname));
+
+// 🏠 Home route (fixes "Cannot GET /")
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // 🔗 MongoDB Connection
 mongoose.connect("mongodb://admin:Anam1234@ac-j5g3hmc-shard-00-00.kpkszvv.mongodb.net:27017,ac-j5g3hmc-shard-00-01.kpkszvv.mongodb.net:27017,ac-j5g3hmc-shard-00-02.kpkszvv.mongodb.net:27017/?ssl=true&replicaSet=atlas-lmr2ek-shard-0&authSource=admin&appName=Cluster0")
@@ -56,7 +66,7 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// ✏️ UPDATE USER ✅ (NEW)
+// ✏️ UPDATE USER
 app.put("/users/:id", async (req, res) => {
   try {
     const { name, email } = req.body;

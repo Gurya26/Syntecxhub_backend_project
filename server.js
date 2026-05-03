@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.static(__dirname)); // serve index.html
 
 // MongoDB connection
-mongoose.connect("mongodb+srv://admin:Anam123@cluster0.kpkszvv.mongodb.net/mydb")
+mongoose.connect("mongodb://admin:Anam1234@ac-j5g3hmc-shard-00-00.kpkszvv.mongodb.net:27017,ac-j5g3hmc-shard-00-01.kpkszvv.mongodb.net:27017,ac-j5g3hmc-shard-00-02.kpkszvv.mongodb.net:27017/?ssl=true&replicaSet=atlas-lmr2ek-shard-0&authSource=admin&appName=Cluster0")
 .then(() => console.log("MongoDB Connected ✅"))
 .catch(err => console.log(err));
 

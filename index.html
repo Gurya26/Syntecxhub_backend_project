@@ -1,33 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>User CRUD App</title>
+  <title>User Manager</title>
   <style>
     body {
       font-family: Arial;
-      background: #f4f6f8;
+      background: #f4f4f4;
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
+      margin-top: 50px;
     }
 
     .container {
       background: white;
-      padding: 30px;
+      padding: 25px;
       border-radius: 10px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
       width: 400px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
     }
 
     h2 {
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
 
     input {
       width: 100%;
       padding: 10px;
-      margin: 5px 0;
+      margin: 8px 0;
       border-radius: 5px;
       border: 1px solid #ccc;
     }
@@ -35,27 +34,42 @@
     button {
       width: 100%;
       padding: 10px;
-      margin-top: 10px;
-      background: #28a745;
+      background: green;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
-    }
-
-    li {
       margin-top: 10px;
     }
 
-    li button {
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .user {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .actions button {
       width: auto;
       margin-left: 5px;
       padding: 5px 10px;
-      background: #007bff;
     }
 
-    li button:last-child {
+    .edit {
+      background: blue;
+    }
+
+    .delete {
       background: red;
+    }
+
+    #message {
+      font-weight: bold;
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -63,102 +77,118 @@
 <body>
 
 <div class="container">
+
   <h2>Add User</h2>
+
+  <div id="message"></div>
 
   <input id="name" placeholder="Enter name">
   <input id="email" placeholder="Enter email">
-
-  <button id="addBtn" onclick="addUser()">Add User</button>
+  <button onclick="submitUser()">Add User</button>
 
   <h2>Users</h2>
-  <ul id="userList"></ul>
+  <div id="users"></div>
+
 </div>
 
 <script>
-const BASE_URL = "https://syntecxhub-backend-project.onrender.com";
 
-// ➕ ADD USER
-async function addUser() {
+let editingId = null;
+
+// Show message
+function showMessage(text, color) {
+  const msg = document.getElementById("message");
+  msg.innerText = text;
+  msg.style.color = color;
+
+  setTimeout(() => {
+    msg.innerText = "";
+  }, 3000);
+}
+
+// Load users
+async function loadUsers() {
+  const res = await fetch("/users");
+  const data = await res.json();
+
+  const usersDiv = document.getElementById("users");
+  usersDiv.innerHTML = "";
+
+  data.forEach(user => {
+    usersDiv.innerHTML += `
+      <div class="user">
+        <span>${user.name} (${user.email})</span>
+        <div class="actions">
+          <button class="edit" onclick="editUser('${user._id}','${user.name}','${user.email}')">Edit</button>
+          <button class="delete" onclick="deleteUser('${user._id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// Add / Update user
+async function submitUser() {
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
 
   if (!name || !email) {
-    alert("Please fill all fields");
+    showMessage("All fields required ❌", "red");
     return;
   }
 
-  await fetch(`${BASE_URL}/users`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email })
-  });
+  try {
+    if (editingId) {
+      await fetch(`/users/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email })
+      });
 
-  document.getElementById("name").value = "";
-  document.getElementById("email").value = "";
+      showMessage("User updated ✏️", "blue");
+      editingId = null;
 
-  loadUsers();
-}
+    } else {
+      await fetch("/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email })
+      });
 
-// 📥 LOAD USERS
-async function loadUsers() {
-  const res = await fetch(`${BASE_URL}/users`);
-  const users = await res.json();
-
-  const list = document.getElementById("userList");
-  list.innerHTML = "";
-
-  users.forEach(user => {
-    const li = document.createElement("li");
-
-    li.innerHTML = `
-      ${user.name} (${user.email})
-      <button onclick="editUser('${user._id}', '${user.name}', '${user.email}')">Edit</button>
-      <button onclick="deleteUser('${user._id}')">Delete</button>
-    `;
-
-    list.appendChild(li);
-  });
-}
-
-// ✏️ EDIT USER
-function editUser(id, name, email) {
-  document.getElementById("name").value = name;
-  document.getElementById("email").value = email;
-
-  const btn = document.getElementById("addBtn");
-  btn.innerText = "Update User";
-
-  btn.onclick = async function () {
-    await fetch(`${BASE_URL}/users/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: document.getElementById("name").value,
-        email: document.getElementById("email").value
-      })
-    });
-
-    btn.innerText = "Add User";
-    btn.onclick = addUser;
+      showMessage("User added ✅", "green");
+    }
 
     document.getElementById("name").value = "";
     document.getElementById("email").value = "";
 
     loadUsers();
-  };
+
+  } catch (err) {
+    showMessage("Error occurred ❌", "red");
+  }
 }
 
-// ❌ DELETE USER
-async function deleteUser(id) {
-  await fetch(`${BASE_URL}/users/${id}`, {
-    method: "DELETE"
-  });
+// Edit
+function editUser(id, name, email) {
+  document.getElementById("name").value = name;
+  document.getElementById("email").value = email;
+  editingId = id;
+}
 
+// Delete
+async function deleteUser(id) {
+  const confirmDelete = confirm("Are you sure?");
+  if (!confirmDelete) return;
+
+  await fetch(`/users/${id}`, { method: "DELETE" });
+
+  showMessage("User deleted ❌", "red");
   loadUsers();
 }
 
-// 🚀 LOAD ON START
+// Initial load
 loadUsers();
+
 </script>
 
 </body>

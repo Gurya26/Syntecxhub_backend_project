@@ -1,27 +1,20 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const path = require("path");
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname)); // serve index.html
 
-// 🔗 Serve frontend
-app.use(express.static(__dirname));
-
-// 🏠 Home route (fixes "Cannot GET /")
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// 🔗 MongoDB Connection
-mongoose.connect("mongodb://admin:Anam1234@ac-j5g3hmc-shard-00-00.kpkszvv.mongodb.net:27017,ac-j5g3hmc-shard-00-01.kpkszvv.mongodb.net:27017,ac-j5g3hmc-shard-00-02.kpkszvv.mongodb.net:27017/?ssl=true&replicaSet=atlas-lmr2ek-shard-0&authSource=admin&appName=Cluster0")
+// MongoDB connection
+mongoose.connect("mongodb+srv://admin:Anam123@cluster0.kpkszvv.mongodb.net/mydb")
 .then(() => console.log("MongoDB Connected ✅"))
 .catch(err => console.log(err));
 
-// 📦 Schema with validation
+// Schema with validation
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -38,76 +31,50 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-// ➕ CREATE USER
+// Routes
+
+// Home route
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
+});
+
+// Get users
+app.get("/users", async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+// Add user
 app.post("/users", async (req, res) => {
   try {
-    const { name, email } = req.body;
-
-    if (!name || !email) {
-      return res.status(400).json({ error: "Name and Email required" });
-    }
-
-    const user = new User({ name, email });
+    const user = new User(req.body);
     await user.save();
-
-    res.status(201).json(user);
+    res.json(user);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
 
-// 📥 GET USERS
-app.get("/users", async (req, res) => {
-  try {
-    const users = await User.find();
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✏️ UPDATE USER
+// Update user
 app.put("/users/:id", async (req, res) => {
   try {
-    const { name, email } = req.body;
-
-    if (!name || !email) {
-      return res.status(400).json({ error: "Name and Email required" });
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
+    const updated = await User.findByIdAndUpdate(
       req.params.id,
-      { name, email },
+      req.body,
       { new: true }
     );
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    res.status(200).json(updatedUser);
+    res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
 
-// ❌ DELETE USER
+// Delete user
 app.delete("/users/:id", async (req, res) => {
-  try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    res.status(200).json({ message: "User deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ message: "Deleted" });
 });
 
-// 🚀 SERVER
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} 🚀`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));

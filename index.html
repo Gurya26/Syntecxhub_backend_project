@@ -1,71 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>User App</title>
+  <title>User CRUD App</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
+      font-family: Arial;
+      background: #f4f6f8;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      margin: 0;
     }
 
     .container {
       background: white;
       padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
       width: 400px;
     }
 
     h2 {
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
     input {
       width: 100%;
       padding: 10px;
-      margin-bottom: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
       border: 1px solid #ccc;
-      border-radius: 6px;
     }
 
     button {
+      width: 100%;
       padding: 10px;
+      margin-top: 10px;
+      background: #28a745;
+      color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
     }
 
-    .add-btn {
-      background: #4CAF50;
-      color: white;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-
-    .delete-btn {
-      background: #ff4d4d;
-      color: white;
-      margin-left: 10px;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
     li {
-      background: #f9fafb;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin-top: 10px;
+    }
+
+    li button {
+      width: auto;
+      margin-left: 5px;
+      padding: 5px 10px;
+      background: #007bff;
+    }
+
+    li button:last-child {
+      background: red;
     }
   </style>
 </head>
@@ -73,68 +63,102 @@
 <body>
 
 <div class="container">
-
   <h2>Add User</h2>
 
   <input id="name" placeholder="Enter name">
   <input id="email" placeholder="Enter email">
-  <button class="add-btn" onclick="addUser()">Add User</button>
+
+  <button id="addBtn" onclick="addUser()">Add User</button>
 
   <h2>Users</h2>
   <ul id="userList"></ul>
-
 </div>
 
 <script>
+const BASE_URL = "https://syntecxhub-backend-project.onrender.com";
 
-// LOAD USERS
+// ➕ ADD USER
+async function addUser() {
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+
+  if (!name || !email) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  await fetch(`${BASE_URL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email })
+  });
+
+  document.getElementById("name").value = "";
+  document.getElementById("email").value = "";
+
+  loadUsers();
+}
+
+// 📥 LOAD USERS
 async function loadUsers() {
-  const res = await fetch("/users");
-  const data = await res.json();
+  const res = await fetch(`${BASE_URL}/users`);
+  const users = await res.json();
 
   const list = document.getElementById("userList");
   list.innerHTML = "";
 
-  data.forEach(user => {
+  users.forEach(user => {
     const li = document.createElement("li");
 
     li.innerHTML = `
       ${user.name} (${user.email})
-      <button class="delete-btn" onclick="deleteUser(${user.id})">Delete</button>
+      <button onclick="editUser('${user._id}', '${user.name}', '${user.email}')">Edit</button>
+      <button onclick="deleteUser('${user._id}')">Delete</button>
     `;
 
     list.appendChild(li);
   });
 }
 
-// ADD USER
-async function addUser() {
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
+// ✏️ EDIT USER
+function editUser(id, name, email) {
+  document.getElementById("name").value = name;
+  document.getElementById("email").value = email;
 
-  await fetch("/users", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ name, email })
-  });
+  const btn = document.getElementById("addBtn");
+  btn.innerText = "Update User";
 
-  loadUsers();
+  btn.onclick = async function () {
+    await fetch(`${BASE_URL}/users/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value
+      })
+    });
+
+    btn.innerText = "Add User";
+    btn.onclick = addUser;
+
+    document.getElementById("name").value = "";
+    document.getElementById("email").value = "";
+
+    loadUsers();
+  };
 }
 
-// DELETE USER
+// ❌ DELETE USER
 async function deleteUser(id) {
-  await fetch(`/users/${id}`, {
+  await fetch(`${BASE_URL}/users/${id}`, {
     method: "DELETE"
   });
 
   loadUsers();
 }
 
-// AUTO LOAD
+// 🚀 LOAD ON START
 loadUsers();
-
 </script>
 
 </body>

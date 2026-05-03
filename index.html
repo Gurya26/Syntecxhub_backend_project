@@ -2,68 +2,140 @@
 <html>
 <head>
   <title>User App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      width: 400px;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .add-btn {
+      background: #4CAF50;
+      color: white;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .delete-btn {
+      background: #ff4d4d;
+      color: white;
+      margin-left: 10px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
 </head>
 
 <body>
+
+<div class="container">
+
   <h2>Add User</h2>
 
   <input id="name" placeholder="Enter name">
   <input id="email" placeholder="Enter email">
-  <button onclick="addUser()">Add</button>
+  <button class="add-btn" onclick="addUser()">Add User</button>
 
   <h2>Users</h2>
   <ul id="userList"></ul>
 
-  <script>
-    const API = "https://syntecxhub-backend-project.onrender.com";
+</div>
 
-    // LOAD USERS
-    async function loadUsers() {
-      const res = await fetch(`${API}/users`);
-      const data = await res.json();
+<script>
 
-      const list = document.getElementById("userList");
-      list.innerHTML = "";
+// LOAD USERS
+async function loadUsers() {
+  const res = await fetch("/users");
+  const data = await res.json();
 
-      data.forEach(user => {
-        const li = document.createElement("li");
+  const list = document.getElementById("userList");
+  list.innerHTML = "";
 
-        li.innerHTML = `
-          ${user.name} (${user.email})
-          <button onclick="deleteUser(${user.id})">Delete</button>
-        `;
+  data.forEach(user => {
+    const li = document.createElement("li");
 
-        list.appendChild(li);
-      });
-    }
+    li.innerHTML = `
+      ${user.name} (${user.email})
+      <button class="delete-btn" onclick="deleteUser(${user.id})">Delete</button>
+    `;
 
-    // ADD USER
-    async function addUser() {
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
+    list.appendChild(li);
+  });
+}
 
-      await fetch(`${API}/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ name, email })
-      });
+// ADD USER
+async function addUser() {
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
 
-      loadUsers();
-    }
+  await fetch("/users", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ name, email })
+  });
 
-    // DELETE USER
-    async function deleteUser(id) {
-      await fetch(`${API}/users/${id}`, {
-        method: "DELETE"
-      });
+  loadUsers();
+}
 
-      loadUsers();
-    }
+// DELETE USER
+async function deleteUser(id) {
+  await fetch(`/users/${id}`, {
+    method: "DELETE"
+  });
 
-    // Load on start
-    loadUsers();
-  </script>
+  loadUsers();
+}
+
+// AUTO LOAD
+loadUsers();
+
+</script>
+
 </body>
 </html>

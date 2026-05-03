@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User App</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f8;
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    .container {
+      background: white;
+      width: 400px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input {
+      padding: 10px;
+      margin: 5px;
+      width: 80%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    li {
+      list-style: none;
+      margin: 10px 0;
+      padding: 10px;
+      background: #f1f1f1;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .delete-btn {
+      background: red;
+    }
+
+    .delete-btn:hover {
+      background: darkred;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>👤 User Manager</h2>
+
+  <input id="name" placeholder="Enter name"><br>
+  <input id="email" placeholder="Enter email"><br>
+  <button onclick="addUser()">Add User</button>
+
+  <h3>Users</h3>
+  <ul id="userList"></ul>
+</div>
+
+<script>
+
+// ADD USER
+async function addUser() {
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+
+  await fetch("http://localhost:5000/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email })
+  });
+
+  loadUsers();
+}
+
+// LOAD USERS
+async function loadUsers() {
+  const res = await fetch("http://localhost:5000/users");
+  const data = await res.json();
+
+  const list = document.getElementById("userList");
+  list.innerHTML = "";
+
+  data.forEach(user => {
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+      ${user.name} (${user.email})
+      <button class="delete-btn" onclick="deleteUser(${user.id})">Delete</button>
+    `;
+
+    list.appendChild(li);
+  });
+}
+
+// DELETE USER
+async function deleteUser(id) {
+  await fetch(`http://localhost:5000/users/${id}`, {
+    method: "DELETE"
+  });
+
+  loadUsers();
+}
+
+// LOAD on start
+loadUsers();
+
+</script>
+
+</body>
+</html>
